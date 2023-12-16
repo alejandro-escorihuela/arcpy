@@ -94,16 +94,37 @@ def arcstep(f, x0, b0, t0, dt, method):
     b1 = calcbeta(f, x1, b0)
     return x1, b1, (it, conv, told)
 
-def arcpy(f, g, x0, s, t0, tf, method = "hybr"):
-    xi = x0.copy()
-    h = 1e-3
+def arcpy(f, g, x0, s, t0, tf, action = 2, method = "hybr"):
+    xi, ti = x0.copy(), t0
+    h, ha = 1e-3, 0
     bi = [s] + [0.0]*(len(x0) - 1)
     bi = calcbeta(f, xi, bi)
-    while (t0 < tf):
-        xo, bo, info = arcstep(f, xi, bi, t0, h, method)
-        xi, bi = xo.copy(), bo.copy()
-        h = nexth(h, (info[0], info[1], info[2], method))
-        t0 = t0 + h
-        #print(t0, xi, f(xi), g(xi), info)
-    return xi
-
+    notf, sicv = True, True
+    xa, ba, ga, ta = xi.copy(), bi.copy(), g(xi), ti
+    decreixg = False
+    it = 0
+    while notf and sicv:
+        xo, bo, info = arcstep(f, xi, bi, ti, h, method)
+        it += info[0]
+        ha = h
+        h = nexth(h, (info[0], info[1], info[2], method))        
+        if info[1]:
+            xa, ba, ga, ta = xi.copy(), bi.copy(), g(xi), ti
+            xi, bi = xo.copy(), bo.copy()
+            g0 = g(xi)
+            ti = ti + h
+            if action == 1:
+                if not decreixg and g0 < ga:
+                    decreixg = True
+                elif decreixg and g0 > ga:
+                    return xa, {'tf': ta, 'success': True, 'iter': it}
+            if action == 2 and np.sign(g0) != np.sign(ga):
+                xcan = xa - ga*(xi - xa)/(g0 - ga)
+                F = lambda x: [f(x)[i] for i in range(len(x0) - 1)] + [g(x)]
+                xres, info, status, txt = optimize.fsolve(F, xcan, full_output = 1)
+                it += info["nfev"]
+                return xres, {'tf': ta, 'success': LA.norm(info["fvec"], 1) < 1e-10, 'iter': it}
+        notf, sicv = ti < tf, info[1] or h != ha
+    if action == 1 and not decreixg :
+        return x0, {'tf': t0, 'success': False, 'iter': it}
+    return xi, {'tf': ti, 'success': action == 0, 'iter': it}

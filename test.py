@@ -13,17 +13,18 @@ def f(x):
     return [x[0]**2+x[1]**2+x[2]**2 - 4, x[0]+x[1]-x[2]]
 
 def g(x):
-    return ((x[0]-1)**2 - 1)
+    return ((x[0] - 0.5)**2 - 0.5)
 
 if __name__ == "__main__":
-    # x0 = [-np.sqrt(2), np.sqrt(2)]
+    ## x0 = [-np.sqrt(2), np.sqrt(2)]
+    # tmp0 = tm.time()
+    # x0 = [-2*np.sqrt(2/3), np.sqrt(2/3), -np.sqrt(2/3)]
+    # x1 = arcpy(f, g, x0, 1.0, 0.0, 10.0, method = "hybr")
+    # print("t =", tm.time() - tmp0)
+    # print(x1)
     tmp0 = tm.time()
     x0 = [-2*np.sqrt(2/3), np.sqrt(2/3), -np.sqrt(2/3)]
-    x1 = arcpy(f, g, x0, 1.0, 0.0, 10.0, method = "hybr")
+    x1, info = arcpy(f, g, x0, 1.0, 0.0, 100.0, method = "hybr")
     print("t =", tm.time() - tmp0)
     print(x1)
-    tmp0 = tm.time()
-    x0 = [-2*np.sqrt(2/3), np.sqrt(2/3), -np.sqrt(2/3)]
-    x1 = arcpy(f, g, x0, 1.0, 0.0, 10.0, method = "newtonsim")
-    print("t =", tm.time() - tmp0)
-    print(x1)
+    print(info)
