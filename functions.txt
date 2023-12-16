@@ -1,0 +1,27 @@
+fhiperpla:
+  Input: x, (\beta_0, \Delta t, f(x), x_0)
+  Output: (f(x), \beta_0^T(x-x_0)-\Delta t)^T
+
+calcbeta:
+  Input: f(x), x_j, \beta_j
+  Output: \beta_{j+1}
+ 
+fnewtonsim:
+  Input: f, x_j, tol_\Delta, (arguments for f), tol_x, \lambda, k_max
+  Output: x_{j+1}, it
+
+nexth:
+  Input: h_old, (it, conv, tol_\Delta, method)
+  Output: h_new
+
+canviarh:
+  Input: h, aug, hamin, hamax
+  Output: h
+
+arcstep:
+  Input: f, x_0, \beta_0, t_0, \Delta_t, method
+  Output: x_1, \beta_1, (it, conv, tol_\Delta)
+
+arcpy:
+  Input: f, g, x_0, s, t_0, t_f, action, method
+  Output: x_n, {t_n, success, it}

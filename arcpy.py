@@ -94,7 +94,7 @@ def arcstep(f, x0, b0, t0, dt, method):
     b1 = calcbeta(f, x1, b0)
     return x1, b1, (it, conv, told)
 
-def arcpy(f, g, x0, s, t0, tf, action = 2, method = "hybr"):
+def arcpy(f, g, x0, s, t0, tf, action, method = "hybr"):
     xi, ti = x0.copy(), t0
     h, ha = 1e-3, 0
     bi = [s] + [0.0]*(len(x0) - 1)
