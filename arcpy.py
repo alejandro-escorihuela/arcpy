@@ -63,7 +63,7 @@ def newtonsim(func, x0, told, args = (), tolx = 1e-10, lam = 0.8, kmax = 5):
         stop = ndx < 1e-10 or ndx < told*nd0 or it > iter_max or k > kmax
         nda = ndx
         it += 1
-    return xj, it# + 2*len(x0)
+    return xj, it
 
 def nexth(h, param):
     it, conv, told, method = param
@@ -109,7 +109,6 @@ def arcstep(f, x0, b0, t0, dt, method):
         print(method + " is not a valid solver")
         exit(-1)
     b1 = calcbeta(f, x1, b0)
-    #it += 2*len(x0)
     return x1, b1, (it, conv, told)
 
 def arcpy(f, g, x0, s, t0, tf, action, method = "hybr"):
