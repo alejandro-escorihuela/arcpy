@@ -8,6 +8,21 @@ import numpy as np
 from scipy import optimize
 from scipy import linalg
 from numpy import linalg as LA
+import time as tm
+
+def jacobian(x0, f, *args):
+    eps = 1e-5
+    xi = x0.copy()
+    dim = len(x0)
+    jac = np.zeros((dim, dim))
+    for i in range(dim):
+        xi[i] -= eps
+        fxminus = f(xi, *args)
+        xi[i] += eps
+        fxplus = f(xi, *args)
+        for j in range(dim):
+            jac[i][j] = (fxplus[j] - fxminus[j])/eps
+    return np.transpose(jac)
 
 def fhiperpla(x, *val):
     b0, dt, func, x0 = val[0], val[1], val[2], val[3]
@@ -22,7 +37,8 @@ def fhiperpla(x, *val):
 
 def calcbeta(f, x0, b0):
     F = lambda x: [f(x)[i] for i in range(len(x0) - 1)] + [0.0]
-    fp = optimize.approx_fprime(x0, F, epsilon = 1e-10)
+    # fp = optimize.approx_fprime(x0, F)
+    fp = jacobian(x0, F)
     fp[-1] = b0.copy()
     ti = [0.0]*(len(x0) - 1) + [1.0]
     bi = linalg.solve(fp, ti)
@@ -33,7 +49,8 @@ def newtonsim(func, x0, told, args = (), tolx = 1e-10, lam = 0.8, kmax = 5):
     stop, it, iter_max, k = False, 0, 20, 0
     xj = x0.copy()
     nda = 0.0
-    jac = optimize.approx_fprime(x0, func, 1e-10, *args)
+    #jac = optimize.approx_fprime(x0, func, 1e-10, *args)
+    jac = jacobian(x0, func, *args)
     while not stop:
         b = -np.array(func(xj, *args))
         dx = linalg.solve(jac, b)
@@ -46,7 +63,7 @@ def newtonsim(func, x0, told, args = (), tolx = 1e-10, lam = 0.8, kmax = 5):
         stop = ndx < 1e-10 or ndx < told*nd0 or it > iter_max or k > kmax
         nda = ndx
         it += 1
-    return xj, it
+    return xj, it# + 2*len(x0)
 
 def nexth(h, param):
     it, conv, told, method = param
@@ -92,6 +109,7 @@ def arcstep(f, x0, b0, t0, dt, method):
         print(method + " is not a valid solver")
         exit(-1)
     b1 = calcbeta(f, x1, b0)
+    #it += 2*len(x0)
     return x1, b1, (it, conv, told)
 
 def arcpy(f, g, x0, s, t0, tf, action, method = "hybr"):
@@ -105,7 +123,9 @@ def arcpy(f, g, x0, s, t0, tf, action, method = "hybr"):
     it = 0
     while notf and sicv:
         xo, bo, info = arcstep(f, xi, bi, ti, h, method)
-        it += info[0]
+        it += info[0] + 2*len(x0)
+        if method == "newtonsim":
+            it += 2*len(x0)
         ha = h
         h = nexth(h, (info[0], info[1], info[2], method))        
         if info[1]:

@@ -25,3 +25,4 @@ arcstep:
 arcpy:
   Input: f, g, x_0, s, t_0, t_f, action, method
   Output: x_n, {t_n, success, it}
+  action: 0 => continue to tf, 1 => search a local minimum and exit, 2 => search g(x) = 0
