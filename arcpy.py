@@ -67,7 +67,7 @@ def newtonsim(func, x0, told, args = (), tolx = 1e-10, lam = 0.8, kmax = 5):
 
 def nexth(h, param):
     it, conv, told, method = param
-    ito_hybr, ito_new = 25, 4
+    ito_hybr, ito_new = 25, 7
     hamin, hamax = 1e-6, 0.05
     hnova = h
     if not conv:
