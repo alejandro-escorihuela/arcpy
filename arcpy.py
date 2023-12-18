@@ -11,17 +11,17 @@ from numpy import linalg as LA
 import time as tm
 
 def jacobian(x0, f, *args):
-    eps = 1e-5
+    eps = 1e-6
     xi = x0.copy()
     dim = len(x0)
     jac = np.zeros((dim, dim))
     for i in range(dim):
         xi[i] -= eps
         fxminus = f(xi, *args)
-        xi[i] += eps
+        xi[i] += 2*eps
         fxplus = f(xi, *args)
         for j in range(dim):
-            jac[i][j] = (fxplus[j] - fxminus[j])/eps
+            jac[i][j] = (fxplus[j] - fxminus[j])/(2*eps)
     return np.transpose(jac)
 
 def fhiperpla(x, *val):
@@ -46,7 +46,7 @@ def calcbeta(f, x0, b0):
     return bi
 
 def newtonsim(func, x0, told, args = (), tolx = 1e-10, lam = 0.8, kmax = 5):
-    stop, it, iter_max, k = False, 0, 20, 0
+    stop, conv, it, iter_max, k = False, False, 0, 20, 0
     xj = x0.copy()
     nda = 0.0
     #jac = optimize.approx_fprime(x0, func, 1e-10, *args)
@@ -60,10 +60,11 @@ def newtonsim(func, x0, told, args = (), tolx = 1e-10, lam = 0.8, kmax = 5):
             nd0 = ndx
         if ndx > lam*nda:
             k +=1
-        stop = ndx < 1e-10 or ndx < told*nd0 or it > iter_max or k > kmax
+        conv = ndx < tolx or ndx < told*nd0
+        stop = conv or it > iter_max or k > kmax
         nda = ndx
         it += 1
-    return xj, it
+    return xj, (it, conv)
 
 def nexth(h, param):
     it, conv, told, method = param
@@ -100,21 +101,20 @@ def canviarh(h, aug, hamin, hamax):
 def arcstep(f, x0, b0, t0, dt, method):
     tolf, told = 1e-11, 1e-6
     if method == "hybr":
-        x1, info, status, txt = optimize.fsolve(fhiperpla, x0, full_output = 1, args = (b0, dt, f, x0))
-        it, conv = info['nfev'], LA.norm(f(x1), 1) < tolf
+        info = optimize.root(fhiperpla, x0, args = (b0, dt, f, x0), method = "hybr")
+        x1, it, conv = info["x"], info["nfev"], info["success"]
     elif method == "newtonsim":
-        x1, it = newtonsim(fhiperpla, x0, told, args = (b0, dt, f, x0))
-        conv = LA.norm(f(x1), 1) < tolf
+        x1, info = newtonsim(fhiperpla, x0, told, args = (b0, dt, f, x0))
+        it, conv = info
     else:
         print(method + " is not a valid solver")
         exit(-1)
     b1 = calcbeta(f, x1, b0)
     return x1, b1, (it, conv, told)
 
-def arcpy(f, g, x0, s, t0, tf, action, method = "hybr", piter = False):
-    xi, ti = x0.copy(), t0
+def arcpy(f, g, x0, b0, t0, tf, action, method = "hybr", piter = False):
+    xi, bi, ti = x0.copy(), b0.copy(), t0
     h, ha = 1e-3, 0
-    bi = [s] + [0.0]*(len(x0) - 1)
     bi = calcbeta(f, xi, bi)
     notf, sicv = True, True
     xa, ba, ga, ta = xi.copy(), bi.copy(), g(xi), ti
@@ -136,16 +136,17 @@ def arcpy(f, g, x0, s, t0, tf, action, method = "hybr", piter = False):
                 if not decreixg and g0 < ga:
                     decreixg = True
                 elif decreixg and g0 > ga:
-                    return xa, {'tf': ta, 'success': True, 'iter': it}
+                    return xa, {"tf": ta, "success": True, "iter": it}
             if action == 2 and np.sign(g0) != np.sign(ga):
                 xcan = xa - ga*(xi - xa)/(g0 - ga)
                 F = lambda x: [f(x)[i] for i in range(len(x0) - 1)] + [g(x)]
-                xres, info, status, txt = optimize.fsolve(F, xcan, full_output = 1)
-                it += info["nfev"]
-                return xres, {'tf': ta, 'success': LA.norm(info["fvec"], 1) < 1e-10, 'iter': it}
+                info_fg = optimize.root(F, xcan, method = "hybr")
+                xres, conv = info_fg["x"], info_fg["success"]
+                it += info_fg["nfev"]
+                return xres, {"tf": ta, "success": info_fg["success"], "iter": it}
         notf, sicv = ti < tf, info[1] or h != ha
         if piter:
             print(ti, xi[:3], LA.norm(f(xi), 1), g(xi), (info[0], info[1]))
     if action == 1 and not decreixg :
-        return x0, {'tf': t0, 'success': False, 'iter': it}
-    return xi, {'tf': ti, 'success': action == 0, 'iter': it}
+        return x0, {"tf": t0, "success": False, "iter": it}
+    return xi, {"tf": ti, "success": action == 0, "iter": it}
