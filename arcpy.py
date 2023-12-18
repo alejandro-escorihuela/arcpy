@@ -69,7 +69,7 @@ def newtonsim(func, x0, told, args = (), tolx = 1e-10, lam = 0.8, kmax = 5):
 def nexth(h, param):
     it, conv, told, method = param
     ito_hybr, ito_new = 25, 7
-    hamin, hamax = 1e-12, 0.05
+    hamin, hamax = 1e-11, 0.05
     hnova = h
     if not conv:
         hnova = canviarh(h, -1, hamin, hamax)
@@ -114,7 +114,10 @@ def arcstep(f, x0, b0, t0, dt, method):
 
 def arcpy(f, g, x0, b0, t0, tf, action, method = "hybr", piter = False):
     xi, bi, ti = x0.copy(), b0.copy(), t0
-    h, ha = np.sqrt(np.finfo(np.float128(x0[0])).eps)*LA.norm(x0, 2), 0.0
+    if method == "hybr":
+        h, ha = 1e-3, 0
+    else:
+        h, ha = np.sqrt(np.finfo(np.float128(x0[0])).eps)*LA.norm(x0, 2), 0.0
     bi = calcbeta(f, xi, bi)
     notf, sicv = True, True
     xa, ba, ga, ta = xi.copy(), bi.copy(), g(xi), ti
