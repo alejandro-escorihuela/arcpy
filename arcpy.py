@@ -25,18 +25,18 @@ def jacobian(x0, f, *args):
     return np.transpose(jac)
 
 def fhiperpla(x, *val):
-    b0, dt, func, x0 = val[0], val[1], val[2], val[3]
+    b0, dt, func, x0, p = val[0], val[1], val[2], val[3], val[4]
     bpx = 0.0
     for i in range(len(b0)):
         bpx += b0[i]*(x[i] - x0[i])
     ret = []
     for i in range(len(x0) - 1):
-        ret.append(func(x)[i])
+        ret.append(func(x, *p)[i])
     ret.append(bpx - dt)
     return ret
 
-def calcbeta(f, x0, b0):
-    F = lambda x: [f(x)[i] for i in range(len(x0) - 1)] + [0.0]
+def calcbeta(f, x0, b0, p):
+    F = lambda x: [f(x, *p)[i] for i in range(len(x0) - 1)] + [0.0]
     # fp = optimize.approx_fprime(x0, F)
     fp = jacobian(x0, F)
     fp[-1] = b0.copy()
@@ -98,33 +98,33 @@ def canviarh(h, aug, hamin, hamax):
             hnova = np.sign(h)*hamin           
     return hnova
 
-def arcstep(f, x0, b0, t0, dt, method):
+def arcstep(f, x0, b0, p, t0, dt, method):
     tolf, told = 1e-11, 1e-6
     if method == "hybr":
-        info = optimize.root(fhiperpla, x0, args = (b0, dt, f, x0), method = "hybr")
+        info = optimize.root(fhiperpla, x0, args = (b0, dt, f, x0, p), method = "hybr")
         x1, it, conv = info["x"], info["nfev"], info["success"]
     elif method == "newtonsim":
-        x1, info = newtonsim(fhiperpla, x0, told, args = (b0, dt, f, x0))
+        x1, info = newtonsim(fhiperpla, x0, told, args = (b0, dt, f, x0, p))
         it, conv = info
     else:
         print(method + " is not a valid solver")
         exit(-1)
-    b1 = calcbeta(f, x1, b0)
+    b1 = calcbeta(f, x1, b0, p)
     return x1, b1, (it, conv, told)
 
-def arcpy(f, g, x0, b0, t0, tf, action, method = "hybr", piter = False):
+def arcpy(f, g, x0, p, b0, t0, tf, action, method = "hybr", piter = False):
     xi, bi, ti = x0.copy(), b0.copy(), t0
     if method == "hybr":
         h, ha = 1e-3, 0
     else:
-        h, ha = np.sqrt(np.finfo(np.float128(x0[0])).eps)*LA.norm(x0, 2), 0.0
-    bi = calcbeta(f, xi, bi)
+        h, ha = np.sqrt(np.finfo((x0[0]).eps))*LA.norm(x0, 2), 0.0
+    bi = calcbeta(f, xi, bi, p)
     notf, sicv = True, True
     xa, ba, ga, ta = xi.copy(), bi.copy(), g(xi), ti
     decreixg = False
     it = 0
     while notf and sicv:
-        xo, bo, info = arcstep(f, xi, bi, ti, h, method)
+        xo, bo, info = arcstep(f, xi, bi, p, ti, h, method)
         it += info[0] + 2*len(x0)
         if method == "newtonsim":
             it += 2*len(x0)
