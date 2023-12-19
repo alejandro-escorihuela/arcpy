@@ -45,7 +45,8 @@ def calcbeta(f, x0, b0, p):
     bi = bi/LA.norm(bi, 2)
     return bi
 
-def newtonsim(func, x0, told, args = (), tolx = 1e-10, lam = 0.8, kmax = 5):
+def newtonsim(func, x0, told, args = ()):
+    tolx, lam, kmax = 1e-10, 0.8, 5
     stop, conv, it, iter_max, k = False, False, 0, 20, 0
     xj = x0.copy()
     nda = 0.0
@@ -117,7 +118,7 @@ def arcpy(f, g, x0, p, b0, t0, tf, action, method = "hybr", piter = False):
     if method == "hybr":
         h, ha = 1e-3, 0
     else:
-        h, ha = np.sqrt(np.finfo((x0[0]).eps))*LA.norm(x0, 2), 0.0
+        h, ha = np.sqrt((np.finfo(x0[0]).eps))*LA.norm(x0, 2), 0.0
     bi = calcbeta(f, xi, bi, p)
     notf, sicv = True, True
     xa, ba, ga, ta = xi.copy(), bi.copy(), g(xi), ti
