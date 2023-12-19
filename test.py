@@ -20,7 +20,7 @@ if __name__ == "__main__":
     p = (2.0, 1.0)
     b0 = [1.0, 0.0, 0.0]
     print(f(x0, *p))
-    x1, info = arcpy(f, g, x0, p, b0, 0.0, 100.0, action = 0, method = "hybr")
+    x1, info = arcpy(f, g, x0, p, b0, 0.0, 100.0, action = 0, method = "newtonsim")
     print("t =", tm.time() - tmp0)
     print(x1)
     print(info)
