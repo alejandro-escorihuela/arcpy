@@ -37,8 +37,8 @@ def fhiperpla(x, *val):
 
 def calcbeta(f, x0, b0, p):
     F = lambda x: [f(x, *p)[i] for i in range(len(x0) - 1)] + [0.0]
-    # fp = optimize.approx_fprime(x0, F)
-    fp = jacobian(x0, F)
+    fp = optimize.approx_fprime(x0, F)
+    # fp = jacobian(x0, F)
     fp[-1] = b0.copy()
     ti = [0.0]*(len(x0) - 1) + [1.0]
     bi = linalg.solve(fp, ti)
@@ -50,8 +50,8 @@ def newtonsim(func, x0, told, args = ()):
     stop, conv, it, iter_max, k = False, False, 0, 20, 0
     xj = x0.copy()
     nda = 0.0
-    #jac = optimize.approx_fprime(x0, func, 1e-10, *args)
-    jac = jacobian(x0, func, *args)
+    jac = optimize.approx_fprime(x0, func, 1e-10, *args)
+    # jac = jacobian(x0, func, *args)
     while not stop:
         b = -np.array(func(xj, *args))
         dx = linalg.solve(jac, b)
