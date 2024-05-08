@@ -38,7 +38,7 @@ def fhiperpla(x, *val):
 def calcbeta(f, x0, b0, p):
     F = lambda x: [f(x, *p)[i] for i in range(len(x0) - 1)] + [0.0]
     fp = optimize.approx_fprime(x0, F)
-    # fp = jacobian(x0, F)
+    #fp = jacobian(x0, F)
     fp[-1] = b0.copy()
     ti = [0.0]*(len(x0) - 1) + [1.0]
     bi = linalg.solve(fp, ti)
@@ -51,7 +51,7 @@ def newtonsim(func, x0, told, args = ()):
     xj = x0.copy()
     nda = 0.0
     jac = optimize.approx_fprime(x0, func, 1e-10, *args)
-    # jac = jacobian(x0, func, *args)
+    #jac = jacobian(x0, func, *args)
     while not stop:
         b = -np.array(func(xj, *args))
         dx = linalg.solve(jac, b)
@@ -143,14 +143,14 @@ def arcpy(f, g, x0, p, b0, t0, tf, action, method = "hybr", piter = False):
                     return xa, {"tf": ta, "success": True, "iter": it}
             if action == 2 and np.sign(g0) != np.sign(ga):
                 xcan = xa - ga*(xi - xa)/(g0 - ga)
-                F = lambda x: [f(x)[i] for i in range(len(x0) - 1)] + [g(x)]
+                F = lambda x: [f(x, *p)[i] for i in range(len(x0) - 1)] + [g(x)]
                 info_fg = optimize.root(F, xcan, method = "hybr")
                 xres, conv = info_fg["x"], info_fg["success"]
                 it += info_fg["nfev"]
                 return xres, {"tf": ta, "success": info_fg["success"], "iter": it}
         notf, sicv = ti < tf, info[1] or h != ha
         if piter:
-            print(ti, xi[:3], LA.norm(f(xi), 1), g(xi), (info[0], info[1]))
+            print(ti, xi[:3], LA.norm(f(xi, *p), 1), g(xi), (info[0], info[1]))
     if action == 1 and not decreixg :
         return x0, {"tf": t0, "success": False, "iter": it}
     return xi, {"tf": ti, "success": action == 0, "iter": it}
