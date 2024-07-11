@@ -141,8 +141,10 @@ def arcpy(f, g, x0, p, b0, t0, tf, action, method = "hybr", piter = False):
                     decreixg = True
                 elif decreixg and g0 > ga:
                     return xa, {"tf": ta, "success": True, "iter": it}
-            if action == 2 and np.sign(g0) != np.sign(ga):
+            if action == 2 and (np.sign(g0) != np.sign(ga) or g0 < 1e-12):
                 xcan = xa - ga*(xi - xa)/(g0 - ga)
+                if g0 < 1e-12:
+                    xcan = xa
                 F = lambda x: [f(x, *p)[i] for i in range(len(x0) - 1)] + [g(x)]
                 info_fg = optimize.root(F, xcan, method = "hybr")
                 xres, conv = info_fg["x"], info_fg["success"]
