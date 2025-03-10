@@ -141,7 +141,7 @@ def arcpy(f, g, x0, p, b0, t0, tf, action, method = "hybr", piter = False):
                     decreixg = True
                 elif decreixg and g0 > ga:
                     return xa, {"tf": ta, "success": True, "iter": it}
-            if action == 2 and (np.sign(g0) != np.sign(ga) or g0 < 1e-12):
+            if action == 2 and (np.sign(g0) != np.sign(ga) or abs(g0) < 1e-12):
                 xcan = xa - ga*(xi - xa)/(g0 - ga)
                 if g0 < 1e-12:
                     xcan = xa
