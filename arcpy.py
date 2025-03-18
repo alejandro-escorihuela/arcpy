@@ -38,7 +38,7 @@ def fhiperpla(x, *val):
 def calcbeta(f, x0, b0, p):
     F = lambda x: [f(x, *p)[i] for i in range(len(x0) - 1)] + [0.0]
     fp = optimize.approx_fprime(x0, F)
-    #fp = jacobian(x0, F)
+    # fp = jacobian(x0, F)
     fp[-1] = b0.copy()
     ti = [0.0]*(len(x0) - 1) + [1.0]
     bi = linalg.solve(fp, ti)
@@ -51,7 +51,7 @@ def newtonsim(func, x0, told, args = ()):
     xj = x0.copy()
     nda = 0.0
     jac = optimize.approx_fprime(x0, func, 1e-10, *args)
-    #jac = jacobian(x0, func, *args)
+    # jac = jacobian(x0, func, *args)
     while not stop:
         b = -np.array(func(xj, *args))
         dx = linalg.solve(jac, b)
@@ -113,7 +113,13 @@ def arcstep(f, x0, b0, p, t0, dt, method):
     b1 = calcbeta(f, x1, b0, p)
     return x1, b1, (it, conv, told)
 
-def arcpy(f, g, x0, p, b0, t0, tf, action, method = "hybr", piter = False):
+def str_arr_curt(v):
+    if len(v) <= 3:
+        return str(v)
+    else:
+        return "[%.7f, %.7f, ..., %.7f]" % (v[0], v[1], v[-1])
+
+def arcpy(f, g, x0, p, b0, t0 = 0.0, tf = 10.0, action = 0, method = "hybr", piter = False, pint = 1, max_steps = 1000):
     xi, bi, ti = x0.copy(), b0.copy(), t0
     if method == "hybr":
         h, ha = 1e-3, 0
@@ -123,9 +129,10 @@ def arcpy(f, g, x0, p, b0, t0, tf, action, method = "hybr", piter = False):
     notf, sicv = True, True
     xa, ba, ga, ta = xi.copy(), bi.copy(), g(xi), ti
     decreixg = False
-    it = 0
+    it, nst = 0, 0
     while notf and sicv:
         xo, bo, info = arcstep(f, xi, bi, p, ti, h, method)
+        nst += 1
         it += info[0] + 2*len(x0)
         if method == "newtonsim":
             it += 2*len(x0)
@@ -150,9 +157,9 @@ def arcpy(f, g, x0, p, b0, t0, tf, action, method = "hybr", piter = False):
                 xres, conv = info_fg["x"], info_fg["success"]
                 it += info_fg["nfev"]
                 return xres, {"tf": ta, "success": info_fg["success"], "iter": it}
-        notf, sicv = ti < tf, info[1] or h != ha
-        if piter:
-            print(ti, xi[:3], LA.norm(f(xi, *p), 1), g(xi), (info[0], info[1]))
+        notf, sicv = ti < tf and nst < max_steps, info[1] or h != ha
+        if piter and nst % pint == 0:
+            print(ti, str_arr_curt(xi), LA.norm(f(xi, *p), 1), g(xi), (info[0], info[1]), nst)
     if action == 1 and not decreixg :
         return x0, {"tf": t0, "success": False, "iter": it}
     return xi, {"tf": ti, "success": action == 0, "iter": it}
